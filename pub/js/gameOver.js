@@ -5,7 +5,6 @@ class GameOver extends Phaser.Scene {
 	}
 
 	preload() {
-		//this.load.image('endBg', 'assets/images/bg/cartoonBG.png');
 		this.load.image('sky', 'pub/assets/images/bg/parallax/7sky.png');
 		this.load.image('rocks', 'pub/assets/images/bg/parallax/6rocks.png');
 		this.load.image('clouds', 'pub/assets/images/bg/parallax/5clouds.png');
@@ -45,6 +44,7 @@ class GameOver extends Phaser.Scene {
 		this.altText2 = this.add.bitmapText(screenCenterX, 350, 'soupofjustice', 'Click to play again', 56).setOrigin(0.5).setInteractive({ useHandCursor: true  });
 		
 		this.input.on('pointermove', function (pointer) {
+
             // move alien toward pointer
             this.physics.moveToObject(this.alien, pointer, 75);
         }, this);

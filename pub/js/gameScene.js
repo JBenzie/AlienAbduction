@@ -74,19 +74,6 @@ class GameScene extends Phaser.Scene {
         this.starRect = new Phaser.Geom.Rectangle(50, 50, (1920 * 2) - 100, 900);
         
         Phaser.Actions.RandomRectangle(this.stars.getChildren(), this.starRect);
-        
-        //this.stars = this.physics.add.group({
-            //key: 'star',
-            //repeat: 50,
-            //setXY: { x: Phaser.Math.FloatBetween(20, 1000), y: Phaser.Math.FloatBetween(20, 800), stepX: Phaser.Math.FloatBetween(20, 50) }
-        //});
-        
-        //this.stars.children.iterate(function (child) {
-        
-            //child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-            //child.setCollideWorldBounds(true);
-        
-        //});
 
         // add score text & game text to screen
         this.highScoreText = this.add.bitmapText(10, 15, 'soupofjustice', 'High Score: ' + this.highScore, 24).setScrollFactor(0);
@@ -98,6 +85,7 @@ class GameScene extends Phaser.Scene {
         this.alien.setBounce(0.7);
         this.alien.setCollideWorldBounds(true);
         this.alien.body.setAllowGravity(false);
+
         // add player
         this.player = this.physics.add.image(this.game.config.width / 2, height - 50, "player").setScale(0.3);
         this.player.body.setAllowGravity(false);
@@ -106,8 +94,10 @@ class GameScene extends Phaser.Scene {
         this.player.setBounce(0.7);
         this.input.on('pointermove', function(pointer) {
             this.physics.resume();
+
             // move alien toward player
             this.physics.moveToObject(this.alien, this.player, this.alienSpeed);
+
             this.tweens.add({
             targets: this.player,
                 x: pointer.worldX,
@@ -165,12 +155,6 @@ class GameScene extends Phaser.Scene {
                 this.star.setCollideWorldBounds(true);
                 this.starGroup.add(this.star);
             }
-            
-            //this.stars.children.iterate(function (child) {
-                //child.setBounce(1, 1).setGravity(Phaser.Math.FloatBetween((50, 200), Phaser.Math.FloatBetween(-50, 200)));
-                //child.body.gravity.y = Phaser.Math.FloatBetween(0.5, 200);
-                //child.setVelocity(50, 50);
-            //});
         }
 
     }
@@ -179,9 +163,6 @@ class GameScene extends Phaser.Scene {
         
         if (Phaser.Geom.Intersects.RectangleToRectangle(this.player.getBounds(), this.alien.getBounds())) {
             this.lives --;
-            //this.alienSpeed = 100;
-            //this.playerSpeed = 800;
-            //this.score = 0;
             this.livesText.setText("Lives: " + this.lives);
             this.scoreText.setText('Score: ' + this.score);
             this.physics.pause();
