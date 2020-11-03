@@ -7,7 +7,6 @@ var gameScene = new GameScene();
 var titleScene = new TitleScene();
 var gameOver = new GameOver();
 
-
 //* Game scene */
 var config = {
   type: Phaser.AUTO,

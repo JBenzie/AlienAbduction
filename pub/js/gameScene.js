@@ -23,7 +23,7 @@ class GameScene extends Phaser.Scene {
         // load any images or sounds
         
         function getRND() {
-            return Phaser.Math.Between(1, 30);
+            return Phaser.Math.Between(1, 30); // used for selecting random player avatar
         }
         
         this.load.image('sky', 'pub/assets/images/bg/parallax/7sky.png');

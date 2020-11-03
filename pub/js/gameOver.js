@@ -5,6 +5,7 @@ class GameOver extends Phaser.Scene {
 	}
 
 	preload() {
+		
 		this.load.image('sky', 'pub/assets/images/bg/parallax/7sky.png');
 		this.load.image('rocks', 'pub/assets/images/bg/parallax/6rocks.png');
 		this.load.image('clouds', 'pub/assets/images/bg/parallax/5clouds.png');
@@ -19,6 +20,7 @@ class GameOver extends Phaser.Scene {
 	}
 
 	create() {
+
 		const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
         const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
         

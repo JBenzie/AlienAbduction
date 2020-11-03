@@ -5,6 +5,7 @@ class TitleScene extends Phaser.Scene {
 	}
 
 	preload() {
+		
 		this.load.image('sky', 'pub/assets/images/bg/parallax/7sky.png');
 		this.load.image('rocks', 'pub/assets/images/bg/parallax/6rocks.png');
 		this.load.image('clouds', 'pub/assets/images/bg/parallax/5clouds.png');
@@ -46,7 +47,7 @@ class TitleScene extends Phaser.Scene {
 		this.altText = this.add.bitmapText(screenCenterX, 250, 'soupofjustice', 'click to start', 56).setOrigin(0.5).setInteractive({ useHandCursor: true  });
         
         this.input.on('pointermove', function (pointer) {
-			
+
             // move alien toward pointer
             this.physics.moveToObject(this.alien, pointer, 75);
         }, this);
