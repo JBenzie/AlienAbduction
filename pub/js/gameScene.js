@@ -134,10 +134,11 @@ class GameScene extends Phaser.Scene {
         this.livesText = this.add.bitmapText(10, 75, 'soupofjustice', 'Lives: ' + this.lives, 24).setScrollFactor(0);
 
         // add enemies
-        this.alien = this.physics.add.image(this.game.config.width / 2, 70, "alien").setScale(0.3);
-        this.alien.setBounce(0.7);
+        this.alien = this.physics.add.image(this.game.config.width / 2, 70, "alien").setScale(0.5);
+        this.alien.setBounce(1);
         this.alien.setCollideWorldBounds(true);
         this.alien.body.setAllowGravity(false);
+        this.alien.setVelocityX(75);
 
         // initialize socket.io
         var self = this;
@@ -253,6 +254,13 @@ class GameScene extends Phaser.Scene {
     //        this.end();
     //    }
 
+        
+        if (this.alien.body.x > 1900) {
+            this.alien.setVelocityX(-75);
+        } else if (this.alien.body.x == 0) {
+            this.alien.setVelocityX(75);
+        }
+
         if (this.player) {
 
             if (this.cursors.left.isDown)
@@ -278,7 +286,11 @@ class GameScene extends Phaser.Scene {
             }
             else
             {
-                this.player.setVelocityY(-50);
+                this.player.setVelocityY(0);
+            }
+
+            if (this.player.x >= this.alien.body.x && this.player.x <= (this.alien.body.x + (this.alien.body.width))) {
+                this.player.setVelocityY(-300);
             }
 
             //this.alien.x = this.player.x;
