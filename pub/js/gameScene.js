@@ -312,6 +312,9 @@ class GameScene extends Phaser.Scene {
                 // move player towards ufo if player is directly under ufo
                 if (this.player.x >= this.alien.body.x && this.player.x <= (this.alien.body.x + (this.alien.body.width))) {
                     this.player.setVelocityY(-200);
+                    this.player.setTint(0xff0000);
+                } else {
+                    this.player.clearTint();
                 }
 
                 //console.log(`ufo velocity: ${this.alien.body.velocity.x}.`);
