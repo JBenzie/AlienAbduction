@@ -17,11 +17,18 @@ class TitleScene extends Phaser.Scene {
         this.load.image("alien", "pub/assets/images/enemies/ufo2.png");
 
 		this.load.bitmapFont('soupofjustice', 'pub/assets/fonts/soupofjustice.png', 'pub/assets/fonts/soupofjustice.fnt');
+
+		this.load.audio('theme', 'pub/assets/audio/bensound-creepy.mp3');
+		this.load.audio('click', 'pub/assets/audio/zapThreeToneUp.mp3');
 		
 	}
 
 	create() {
-	    
+		
+		// background music
+        var music = this.sound.add('theme', { volume: 0.2 });
+        music.play();
+
 	    const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
         const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
         const width = this.scale.width;
@@ -64,7 +71,7 @@ class TitleScene extends Phaser.Scene {
 	    });
 		
 		this.input.once('pointerdown', () => {
-
+			this.sound.play('click');
             this.scene.start('gameScene');
 
         });

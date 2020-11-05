@@ -6,21 +6,15 @@ class GameScene extends Phaser.Scene {
     
     init() {
         // initialize game variables
-        this.score = 0;
-        this.lives = 3;
-        this.speed = 1.5;
-        this.score_text;
-        this.lives_text;
-        this.alienSpeed = 150;
-        this.playerSpeed = 1000;
-        this.highScore = parseInt(localStorage.getItem('highscore')) || 0;
+        
     }
 
     preload() {
         
         // load any images or sounds
 
-        this.load.audio('theme', 'pub/assets/audio/bensound-creepy.mp3');
+        this.load.audio('collect', 'pub/assets/audio/zapThreeToneUp.mp3');
+        this.load.audio('abduct', 'pub/assets/audio/pepSound2.mp3');
 
         this.load.image("player1", "pub/assets/images/players/1.png");
         this.load.image("player2", "pub/assets/images/players/2.png");
@@ -93,7 +87,7 @@ class GameScene extends Phaser.Scene {
 		this.load.image('ground', 'pub/assets/images/bg/parallax/1ground.png');
         
         
-        this.load.image("alien", "pub/assets/images/enemies/ufo2.png");
+        this.load.image('alien', 'pub/assets/images/enemies/ufo2.png');
         this.load.image("star", "pub/assets/images/misc/star.png");
         this.load.bitmapFont('soupofjustice', 'pub/assets/font/soupofjustice.png', 'pub/assets/font/soupofjustice.fnt');
 
@@ -101,10 +95,6 @@ class GameScene extends Phaser.Scene {
     create() {
         // define any objects
         console.log("I'm ready..I'm ready!");
-
-        // background music
-        var music = this.sound.add('theme');
-        music.play();
 
         // constants
         const width = this.scale.width;
@@ -134,6 +124,7 @@ class GameScene extends Phaser.Scene {
         // add score text & game text to screen
         this.highScoreText = this.add.bitmapText(25, 15, 'soupofjustice', '', 24).setScrollFactor(0);
         this.scoreText = this.add.bitmapText(25, 45, 'soupofjustice', '', 24).setScrollFactor(0);
+        //this.music = this.physics.add.image(40, 90, 'music').setScale(0.1).setScrollFactor(0);
         //this.livesText = this.add.bitmapText(10, 75, 'soupofjustice', 'Lives: ' + this.lives, 24).setScrollFactor(0);
 
         this.socket.on('scoreUpdate', function (players) {
@@ -153,6 +144,7 @@ class GameScene extends Phaser.Scene {
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
             console.log(`star.x: ${self.star.x}, star.y: ${self.star.y}.`)
             self.physics.add.overlap(self.player, self.star, function () {
+                this.sound.play('collect');
                 this.socket.emit('starCollected');
             }, null, self);
         });
@@ -319,6 +311,7 @@ class GameScene extends Phaser.Scene {
                 if (this.player.x >= this.alien.body.x && this.player.x <= (this.alien.body.x + (this.alien.body.width))) {
                     this.player.setVelocityY(-200);
                     this.player.setTint(0xff0000);
+                    this.sound.play('abduct');
                 } else {
                     this.player.clearTint();
                 }
