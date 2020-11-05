@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
+const path = require('path');
 
 var players = {};
 var ufo = {
@@ -18,8 +19,6 @@ var leaderboard = {
   highScore: 0
 };
 
-const path = require('path');
- 
 app.use('/pub', express.static(path.join(__dirname, 'pub')));
  
 app.get('/', function (req, res) {
