@@ -20,6 +20,8 @@ class GameScene extends Phaser.Scene {
         
         // load any images or sounds
 
+        this.load.audio('theme', 'pub/assets/audio/bensound-creepy.mp3');
+
         this.load.image("player1", "pub/assets/images/players/1.png");
         this.load.image("player2", "pub/assets/images/players/2.png");
         this.load.image("player3", "pub/assets/images/players/3.png");
@@ -99,6 +101,10 @@ class GameScene extends Phaser.Scene {
     create() {
         // define any objects
         console.log("I'm ready..I'm ready!");
+
+        // background music
+        var music = this.sound.add('theme');
+        music.play();
 
         // constants
         const width = this.scale.width;
