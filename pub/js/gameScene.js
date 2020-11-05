@@ -104,6 +104,12 @@ class GameScene extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         
+        // initialize socket.io
+        var self = this;
+        this.socket = io();
+        this.otherPlayers = this.physics.add.group();
+        this.stars = this.physics.add.group();
+
 	    // add parallax bg
 		this.add.image(width * 0.5, height * 0.5, 'sky').setScrollFactor(0);
 		this.add.image(0, height, 'rocks').setOrigin(0, 1).setScrollFactor(0.25);
@@ -119,33 +125,39 @@ class GameScene extends Phaser.Scene {
 		this.add.image(0, height, 'ground').setOrigin(0, 1).setScrollFactor(0.90);
 		this.add.image(1920, height, 'ground').setOrigin(0, 1).setScrollFactor(0.90);
 
-        
-        // add collectibles to screen
-        //this.addStars = this.time.delayedCall(100, newStars, [], this);
-        
-        this.stars = this.physics.add.staticGroup({ key: 'star', frameQuantity: 200 });
-        this.starRect = new Phaser.Geom.Rectangle(50, 50, (1920 * 2) - 100, 900);
-        
-        Phaser.Actions.RandomRectangle(this.stars.getChildren(), this.starRect);
-
         // add score text & game text to screen
-        this.highScoreText = this.add.bitmapText(10, 15, 'soupofjustice', 'High Score: ' + this.highScore, 24).setScrollFactor(0);
-        this.scoreText = this.add.bitmapText(10, 45, 'soupofjustice', 'Score: ' + this.score, 24).setScrollFactor(0);
-        this.livesText = this.add.bitmapText(10, 75, 'soupofjustice', 'Lives: ' + this.lives, 24).setScrollFactor(0);
+        this.highScoreText = this.add.bitmapText(25, 15, 'soupofjustice', '', 24).setScrollFactor(0);
+        this.scoreText = this.add.bitmapText(25, 45, 'soupofjustice', '', 24).setScrollFactor(0);
+        //this.livesText = this.add.bitmapText(10, 75, 'soupofjustice', 'Lives: ' + this.lives, 24).setScrollFactor(0);
 
-        // add enemies
-        this.alien = this.physics.add.image(this.game.config.width / 2, 70, "alien").setScale(0.5);
-        this.alien.setBounce(1);
-        this.alien.setCollideWorldBounds(true);
-        this.alien.body.setAllowGravity(false);
-        this.alien.setVelocityX(75);
+        this.socket.on('scoreUpdate', function (players) {
+            Object.keys(players).forEach(function (id) {
+                if (players[id].playerId === self.socket.id) {
+                    self.scoreText.setText('Score: ' + players[id].score);
+                }
+            })
+        });
 
-        // initialize socket.io
-        var self = this;
-        this.socket = io();
-        this.otherPlayers = this.physics.add.group();
+        this.socket.on('leaderboardUpdate', function (leaderboard) {
+            self.highScoreText.setText('High Score: ' + leaderboard.playerName + ' - ' + leaderboard.highScore);
+        });
+
+        this.socket.on('starLocation', function (starLocation) {
+            if (self.star) self.star.destroy();
+            self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+            console.log(`star.x: ${self.star.x}, star.y: ${self.star.y}.`)
+            self.physics.add.overlap(self.player, self.star, function () {
+                this.socket.emit('starCollected');
+            }, null, self);
+        });
+
+        this.socket.on('ufoPosition', function (ufo) {
+            self.alien = self.physics.add.image(ufo.x, 70, "alien").setScale(0.4);
+            self.alien.setCollideWorldBounds(true);
+            self.alien.setBounce(1);
+            self.alien.setVelocityX(ufo.vel);            
+        });
         this.socket.on('currentPlayers', function (players) {
-
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
                     addPlayer(self, players[id]);
@@ -153,82 +165,73 @@ class GameScene extends Phaser.Scene {
                     addOtherPlayers(self, players[id]);
                 }
             });
-
         });
+
         this.socket.on('newPlayer', function (playerInfo) {
             addOtherPlayers(self, playerInfo);
         });
         this.socket.on('disconnect', function (playerId) {
             self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-              if (playerId === otherPlayer.playerId) {
-                otherPlayer.destroy();
-              }
+                if (playerId === otherPlayer.playerId) {
+                    otherPlayer.destroy();
+                }
             });
-          });
-        
+        });
+
+        this.socket.on('playerMoved', function (playerInfo) {
+            self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                if (playerInfo.playerId === otherPlayer.playerId) {
+                    otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+                }
+            });
+        });
+
+        this.socket.on('ufoMoved', function (ufoInfo) {
+            console.log("ufoMoved triggered");
+            self.alien.body.x = ufoInfo.x;
+            //self.alien.setVelocityX(ufoInfo.vel);
+            self.alien.body.velocity.x = ufoInfo.vel;
+        });
+
         // camera
         this.cameras.main.setBounds(0, 0, this.game.config.width * 2, this.game.config.height);
-        this.physics.world.setBounds(0, 0, 1920 * 2, 1080);
-        //this.cameras.main.startFollow(self.player, true, 0.05, 0.05);
+        this.physics.world.setBounds(0, 0, 1920 * 2, this.game.config.height);
 
         this.cursors = this.input.keyboard.createCursorKeys();
-        
-        function collectStar (player, star)
-        {
-
-            star.destroy();
-            this.score ++;
-            
-            // increase player size until scale = 0.7
-            if (this.player.scaleX <= 0.7 || this.player.scaleY <= 0.7) {
-                this.player.scaleX += .01;
-                this.player.scaleY += .01;
-            } else {
-                this.player.scaleX = this.player.scaleX;
-                this.player.scaleY = this.player.scaleY;
-            }
-            
-            this.scoreText.setText('Score: ' + this.score);
-            
-            if (this.stars.countActive(true) === 0) {
-                
-                this.stars = this.physics.add.group({ key: 'star', frameQuantity: 100 });
-        
-                this.starRect = new Phaser.Geom.Rectangle(50, 50, (1920 * 2) - 100, 900);
-                
-                Phaser.Actions.RandomRectangle(this.stars.getChildren(), this.starRect);
-                
-                //this.addStars = this.time.delayedCall(100, newStars, [], this);
-            }
-     
-        }
 
         function addPlayer(self, playerInfo) {
-            self.player = self.physics.add.image(playerInfo.x, playerInfo.y, "player7").setScale(0.3);
+            self.player = self.physics.add.image(playerInfo.x, playerInfo.y, getImage("player", playerInfo.rnd)).setScale(0.3);
             self.player.setCollideWorldBounds(true);
             self.player.setBounce(0.7);
             self.player.setDrag(100);
             self.player.setAngularDrag(100);
             self.player.setMaxVelocity(200);
-            //self.physics.overlap(self.player, self.stars, collectStar, null, this);
+            self.cameras.main.startFollow(self.player, true, 0.05, 0.05);
         }
 
-        function getImage(type) {
-            var rnd = Phaser.Math.Between(1, 31);
+        function getImage(type, num) {
             var result;
             if (type == "player") {
-                result = "player" + rnd;
+                result = "player" + num;
+                console.log(result);
             } else {
-                result = "otherPlayer" + rnd;
+                result = "otherPlayer" + num;
             }
             return result;
         }
 
         function addOtherPlayers(self, playerInfo) {
-            const otherPlayer = self.add.image(playerInfo.x, playerInfo.y, "otherPlayer10").setScale(0.3);
+            const otherPlayer = self.add.image(playerInfo.x, playerInfo.y, getImage("other", playerInfo.rnd)).setScale(0.3);
             otherPlayer.playerId = playerInfo.playerId;
             self.otherPlayers.add(otherPlayer);
           }
+
+        function addStars(self, stars) {
+            for (var s in stars) {
+                var star = this.physics.add.image(s.x, s.y, 'star');
+                this.stars.add(star);
+            }
+        }
         
     //    function newStars ()
     //    {
@@ -254,22 +257,15 @@ class GameScene extends Phaser.Scene {
     //        this.end();
     //    }
 
-        
-        if (this.alien.body.x > 1900) {
-            this.alien.setVelocityX(-75);
-        } else if (this.alien.body.x == 0) {
-            this.alien.setVelocityX(75);
-        }
-
         if (this.player) {
 
             if (this.cursors.left.isDown)
             {
-                this.player.setVelocityX(-100);
+                this.player.setVelocityX(-150);
             }
             else if (this.cursors.right.isDown)
             {
-                this.player.setVelocityX(100);
+                this.player.setVelocityX(150);
             }
             else
             {
@@ -278,30 +274,64 @@ class GameScene extends Phaser.Scene {
 
             if (this.cursors.up.isDown)
             {
-                this.player.setVelocityY(-150);
+                this.player.setVelocityY(-200);
             }
             else if (this.cursors.down.isDown)
             {
-                this.player.setVelocityY(100);
+                this.player.setVelocityY(150);
             }
             else
             {
                 this.player.setVelocityY(0);
             }
 
-            if (this.player.x >= this.alien.body.x && this.player.x <= (this.alien.body.x + (this.alien.body.width))) {
-                this.player.setVelocityY(-300);
+            if (this.alien) {
+
+                // keep ufo in view
+                if (this.alien.body.x > this.physics.world.width - 100) {
+                    this.alien.setVelocityX(-75);
+                } else if (this.alien.body.x == 0) {
+                    this.alien.setVelocityX(75);
+                }
+                
+                // emit ufo movement
+
+                var alienX = this.alien.body.x;
+                var alienV = this.alien.body.velocity.x;
+
+                // send updated ufo position
+                if (this.alien.oldPosition && (alienX !== this.alien.oldPosition.x)) {
+                    this.socket.emit('ufoMovement', { x: this.alien.body.x, vel: this.alien.body.velocity.x });
+                }
+
+                this.alien.oldPosition = {
+                    x: this.alien.body.x,
+                    vel: this.alien.body.velocity.x,
+                };
+                
+                // move player towards ufo if player is directly under ufo
+                if (this.player.x >= this.alien.body.x && this.player.x <= (this.alien.body.x + (this.alien.body.width))) {
+                    this.player.setVelocityY(-200);
+                }
+
+                //console.log(`ufo velocity: ${this.alien.body.velocity.x}.`);
             }
 
-            //this.alien.x = this.player.x;
-        }
-        
-    //    var scrol_x = self.player.x - self.game.config.width/2;    
-    //    var scrol_y = self.player.y - self.game.config.height/2;    
+            // emit player movement
+            var x = this.player.x;
+            var y = this.player.y;
+            
+            if (this.player.oldPosition && (x !== this.player.oldPosition.x || y !== this.player.oldPosition.y)) {
+                this.socket.emit('playerMovement', { x: this.player.x, y: this.player.y });
+            }
+            
+            // save old position data
+            this.player.oldPosition = {
+                x: this.player.x,
+                y: this.player.y,
+            };
 
-    //        this.cameras.main.scrollX = scrol_x;    ///  scrollX - Х top left point of camera
-    //        this.cameras.main.scrollY = scrol_y;
-        
+        }        
         
     }
     
