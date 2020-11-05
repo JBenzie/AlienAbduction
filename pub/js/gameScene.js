@@ -152,7 +152,7 @@ class GameScene extends Phaser.Scene {
         });
 
         this.socket.on('ufoPosition', function (ufo) {
-            self.alien = self.physics.add.image(ufo.x, 70, "alien").setScale(0.4);
+            self.alien = self.physics.add.image(ufo.x, 75, "alien").setScale(0.4);
             self.alien.setCollideWorldBounds(true);
             self.alien.setBounce(1);
             self.alien.setVelocityX(ufo.vel);            
