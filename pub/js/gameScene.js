@@ -136,7 +136,11 @@ class GameScene extends Phaser.Scene {
         });
 
         this.socket.on('leaderboardUpdate', function (leaderboard) {
-            self.highScoreText.setText('High Score: ' + leaderboard.playerName + ' - ' + leaderboard.highScore);
+            if (leaderboard.highScore == 0) {
+                self.highScoreText.setText(`High Score: ---`);
+            } else {
+                self.highScoreText.setText(`High Score: ${leaderboard.highScore} (${leaderboard.playerName})`);
+            }
         });
 
         this.socket.on('starLocation', function (starLocation) {
@@ -309,7 +313,7 @@ class GameScene extends Phaser.Scene {
                 
                 // move player towards ufo if player is directly under ufo
                 if (this.player.x >= this.alien.body.x && this.player.x <= (this.alien.body.x + (this.alien.body.width))) {
-                    this.player.setVelocityY(-200);
+                    this.player.setVelocityY(-300);
                     this.player.setTint(0xff0000);
                     this.sound.play('abduct');
                 } else {
