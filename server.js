@@ -196,8 +196,13 @@ io.on('connection', function (socket) {
       leaderboard.playerID = players[socket.id];
       leaderboard.playerName = players[socket.id].name;
     }
-    star.x = Math.floor(Math.random() * (1900 * 2)) + 50;
-    star.y = Math.floor(Math.random() * 800) + 50;
+
+    do {
+      star.x = Math.floor(Math.random() * (1900 * 2)) + 50;
+      star.y = Math.floor(Math.random() * 800) + 50;
+    } 
+    while (star.x == players[socket.id].x && star.y == players[socket.id].y);
+
     io.emit('starLocation', star);
     io.emit('scoreUpdate', players);
     io.emit('leaderboardUpdate', leaderboard);
