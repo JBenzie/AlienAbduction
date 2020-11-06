@@ -104,7 +104,7 @@ class GameScene extends Phaser.Scene {
         var self = this;
         this.socket = io();
         this.otherPlayers = this.physics.add.group();
-        this.stars = this.physics.add.group();
+        this.stars = this.physics.add.staticGroup();
 
 	    // add parallax bg
 		this.add.image(width * 0.5, height * 0.5, 'sky').setScrollFactor(0);
@@ -124,7 +124,6 @@ class GameScene extends Phaser.Scene {
         // add score text & game text to screen
         this.highScoreText = this.add.bitmapText(25, 15, 'soupofjustice', '', 24).setScrollFactor(0);
         this.scoreText = this.add.bitmapText(25, 45, 'soupofjustice', '', 24).setScrollFactor(0);
-        //this.music = this.physics.add.image(40, 90, 'music').setScale(0.1).setScrollFactor(0);
         //this.livesText = this.add.bitmapText(10, 75, 'soupofjustice', 'Lives: ' + this.lives, 24).setScrollFactor(0);
 
         this.socket.on('scoreUpdate', function (players) {
@@ -143,6 +142,21 @@ class GameScene extends Phaser.Scene {
             }
         });
 
+// need to fix star group or add a sprite pool?
+
+        /* this.socket.on('starGroup', function (starGroup) {
+            var stars = self.physics.add.staticGroup();
+            Object.keys(starGroup).forEach(function (id) {
+                //console.log(`star ${starGroup[id].id} - x: ${starGroup[id].x}, y: ${starGroup[id].y}.`)
+                var star = self.physics.add.image(starGroup[id].x, starGroup[id].y, 'star');
+                stars.add(star);
+                self.physics.add.collide(self.player, stars, function () {
+                    self.sound.play('collect');
+                    self.socket.emit('starCollected');
+                }, null, self);
+            });
+        }); */
+
         this.socket.on('starLocation', function (starLocation) {
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
@@ -157,8 +171,22 @@ class GameScene extends Phaser.Scene {
             self.alien = self.physics.add.image(ufo.x, 75, "alien").setScale(0.4);
             self.alien.setCollideWorldBounds(true);
             self.alien.setBounce(1);
-            self.alien.setVelocityX(ufo.vel);            
+            self.alien.setVelocityX(ufo.vel);
+            self.physics.add.overlap(self.player, self.alien, function () {
+                //this.sound.play('captured');
+                var player = self.player;
+                self.physics.pause();
+                this.socket.emit('playerAbducted', { player });
+            }, null, self);            
         });
+
+        this.socket.on('playerRespawn', function (player) {
+            console.log(`Player respawned: ${player.name}.`)
+            self.player.x = player.x;
+            self.player.y = player.y;
+            self.physics.resume();
+        });
+
         this.socket.on('currentPlayers', function (players) {
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {

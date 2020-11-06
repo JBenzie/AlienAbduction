@@ -9,10 +9,7 @@ var ufo = {
   x: 0,
   vel: 0
 };
-var star = {
-  x: Math.floor(Math.random() * (1900 * 2)) + 50,
-  y: Math.floor(Math.random() * 800) + 50
-};
+var stars = {};
 var leaderboard = {
   playerID: 0,
   playerName: '',
@@ -122,8 +119,8 @@ io.on('connection', function (socket) {
       break;
   }
   players[socket.id] = {
-    x: Math.floor(Math.random() * 700) + 50,
-    y: Math.floor(Math.random() * 500) + 50,
+    x: Math.floor(Math.random() * 3600) + 50,
+    y: Math.floor(Math.random() * 800) + 50,
     playerId: socket.id,
     score: 0,
     rnd: _rnd,
@@ -149,9 +146,17 @@ io.on('connection', function (socket) {
   // send the players object to the new player
   socket.emit('currentPlayers', players);
 
-  // send star object to the new player
+/*   // send star object to the new player
+  for (var i = 0; i < 200; i++) {
+    stars[i] = {
+      id: i,
+      x: Math.floor(Math.random() * 3600) + 50,
+      y: Math.floor(Math.random() * 800) + 50
+    };
+    //console.log(`star ${stars[i].id} - x: ${stars[i].x}, y: ${stars[i].y}.`);
+  };
+  socket.emit('starGroup', stars); */
   socket.emit('starLocation', star);
-
   // send the current scores
   socket.emit('leaderboardUpdate', leaderboard);
   socket.emit('scoreUpdate', players);
@@ -188,6 +193,24 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('ufoMoved', ufo);
   });
 
+  // listen for 'playerAbducted' event
+  socket.on('playerAbducted', function () {
+    console.log(`${players[socket.id].name} has been abducted!`);
+    players[socket.id].score = 0;
+    players[socket.id].x = Math.floor(Math.random() * 3600) + 50;
+    players[socket.id].y = Math.floor(Math.random() * 800) + 50;
+    io.emit('scoreUpdate', players);
+    io.emit('playerRespawn', players[socket.id]);
+  });
+
+  function getStar() {
+    var newStar = {};
+    newStar.x = Math.floor(Math.random() * (1900 * 2)) + 50;
+    newStar.y = Math.floor(Math.random() * 800) + 50;
+    console.log(`New star generated. star x: ${newStar.x}, star.y: ${newStar.y}.`);
+    return newStar;
+  }
+
   // listen for 'starCollected' event, update scores, generate new star
   socket.on('starCollected', function () {
     players[socket.id].score += 1;
@@ -197,15 +220,30 @@ io.on('connection', function (socket) {
       leaderboard.playerName = players[socket.id].name;
     }
 
-    do {
-      star.x = Math.floor(Math.random() * (1900 * 2)) + 50;
-      star.y = Math.floor(Math.random() * 800) + 50;
-    } 
-    while (star.x == players[socket.id].x && star.y == players[socket.id].y);
+    star = getStar();
 
-    io.emit('starLocation', star);
-    io.emit('scoreUpdate', players);
-    io.emit('leaderboardUpdate', leaderboard);
+    if (star.x == players[socket.id].x) {
+      console.log(`star.x = player.x... recalculating.`);
+      star.x = Math.floor(Math.random() * (1800 * 2)) + 50;
+    } else if (star.y == players[socket.id].y) {
+      console.log(`star.y = player.y... recalculating.`);
+      star.y = Math.floor(Math.random() * 800) + 50;
+    } else {
+      io.emit('starLocation', star);
+      io.emit('scoreUpdate', players);
+      io.emit('leaderboardUpdate', leaderboard);
+    }
+
+    /* do {
+      console.log(`Getting new star...`)
+      star = getStar();
+    } 
+    while (star.x == players[socket.id].x && star.y == players[socket.id].y); {
+      console.log(`Star coords match player coords...getting new star.`);
+      star = getStar();
+    } */
+
+    
   });
 
 
