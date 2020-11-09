@@ -16,7 +16,7 @@ var config = {
     default: "arcade",
         arcade: {
     		  //gravity: { y: -50 },
-    	    debug: false
+    	    debug: true
         }
     },
 };

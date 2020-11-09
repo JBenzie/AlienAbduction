@@ -104,7 +104,7 @@ class GameScene extends Phaser.Scene {
         var self = this;
         this.socket = io();
         this.otherPlayers = this.physics.add.group();
-        this.stars = this.physics.add.staticGroup();
+        this.stars = this.physics.add.group();
 
 	    // add parallax bg
 		this.add.image(width * 0.5, height * 0.5, 'sky').setScrollFactor(0);
@@ -130,6 +130,7 @@ class GameScene extends Phaser.Scene {
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
                     self.scoreText.setText('Score: ' + players[id].score);
+                    self.physics.resume();
                 }
             })
         });
@@ -142,26 +143,12 @@ class GameScene extends Phaser.Scene {
             }
         });
 
-// need to fix star group or add a sprite pool?
-
-        /* this.socket.on('starGroup', function (starGroup) {
-            var stars = self.physics.add.staticGroup();
-            Object.keys(starGroup).forEach(function (id) {
-                //console.log(`star ${starGroup[id].id} - x: ${starGroup[id].x}, y: ${starGroup[id].y}.`)
-                var star = self.physics.add.image(starGroup[id].x, starGroup[id].y, 'star');
-                stars.add(star);
-                self.physics.add.collide(self.player, stars, function () {
-                    self.sound.play('collect');
-                    self.socket.emit('starCollected');
-                }, null, self);
-            });
-        }); */
-
         this.socket.on('starLocation', function (starLocation) {
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
             console.log(`star.x: ${self.star.x}, star.y: ${self.star.y}.`)
             self.physics.add.overlap(self.player, self.star, function () {
+                self.physics.pause();
                 this.sound.play('collect');
                 this.socket.emit('starCollected');
             }, null, self);

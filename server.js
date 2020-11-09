@@ -9,7 +9,10 @@ var ufo = {
   x: 0,
   vel: 0
 };
-var stars = {};
+var star = {
+  x: Math.floor(Math.random() * (1800 * 2)) + 50,
+  y: Math.floor(Math.random() * 800) + 50
+};
 var leaderboard = {
   playerID: 0,
   playerName: '',
@@ -146,17 +149,9 @@ io.on('connection', function (socket) {
   // send the players object to the new player
   socket.emit('currentPlayers', players);
 
-/*   // send star object to the new player
-  for (var i = 0; i < 200; i++) {
-    stars[i] = {
-      id: i,
-      x: Math.floor(Math.random() * 3600) + 50,
-      y: Math.floor(Math.random() * 800) + 50
-    };
-    //console.log(`star ${stars[i].id} - x: ${stars[i].x}, y: ${stars[i].y}.`);
-  };
-  socket.emit('starGroup', stars); */
+  // send star object to the new player
   socket.emit('starLocation', star);
+
   // send the current scores
   socket.emit('leaderboardUpdate', leaderboard);
   socket.emit('scoreUpdate', players);
