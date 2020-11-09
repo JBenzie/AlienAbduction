@@ -9,6 +9,7 @@ var ufo = {
   x: 0,
   vel: 0
 };
+var stars = {};
 var star = {
   x: Math.floor(Math.random() * (1800 * 2)) + 50,
   y: Math.floor(Math.random() * 800) + 50
@@ -28,6 +29,7 @@ app.get('/', function (req, res) {
 io.on('connection', function (socket) {
   console.log('Sweet..a user has connected!');
   var _rnd = Math.floor(Math.random() * 30) + 1;
+  var timer = 10;
   var avatar;
   switch(_rnd) {
     case 1:
@@ -150,7 +152,16 @@ io.on('connection', function (socket) {
   socket.emit('currentPlayers', players);
 
   // send star object to the new player
-  socket.emit('starLocation', star);
+  //socket.emit('starLocation', star);
+
+  for (var i = 0; i < 500; i++) {
+    stars[i] = {
+      x: Math.floor(Math.random() * 3600) + 50,
+      y: Math.floor(Math.random() * 800) + 50
+    };
+    //console.log(`star ${stars[i].id} - x: ${stars[i].x}, y: ${stars[i].y}.`);
+  };
+  socket.emit('starGroup', stars);
 
   // send the current scores
   socket.emit('leaderboardUpdate', leaderboard);
@@ -207,15 +218,20 @@ io.on('connection', function (socket) {
   }
 
   // listen for 'starCollected' event, update scores, generate new star
-  socket.on('starCollected', function () {
+  socket.on('starCollected', function (starCollected) {
     players[socket.id].score += 1;
     if (players[socket.id].score > leaderboard.highScore) {
       leaderboard.highScore = players[socket.id].score;
       leaderboard.playerID = players[socket.id];
       leaderboard.playerName = players[socket.id].name;
     }
-
-    star = getStar();
+    //stars = currentStars;
+    io.emit('leaderboardUpdate', leaderboard);
+    io.emit('scoreUpdate', players);
+    //socket.broadcast.emit('starGroup', stars);
+    console.log(`Star x: ${starCollected.x}, y: ${starCollected.y}.`);
+    
+    /* star = getStar();
 
     if (star.x == players[socket.id].x) {
       console.log(`star.x = player.x... recalculating.`);
@@ -224,10 +240,10 @@ io.on('connection', function (socket) {
       console.log(`star.y = player.y... recalculating.`);
       star.y = Math.floor(Math.random() * 800) + 50;
     } else {
-      io.emit('starLocation', star);
-      io.emit('scoreUpdate', players);
-      io.emit('leaderboardUpdate', leaderboard);
-    }
+      //io.emit('starLocation', star);
+      
+
+    } */
 
     /* do {
       console.log(`Getting new star...`)

@@ -154,6 +154,23 @@ class GameScene extends Phaser.Scene {
             }, null, self);
         });
 
+        this.socket.on('starGroup', function (stars) {
+            Object.keys(stars).forEach(function (id) {
+                self.stars.create(stars[id].x, stars[id].y, 'star');
+                console.log(`Star added! x: ${stars[id].x}, y: ${stars[id].y}.`);
+            });
+            console.log(`Star count: ${self.stars.countActive(true)}`);
+            self.physics.add.overlap(self.player, self.stars, collectStar, null, self);
+        });
+
+        function collectStar (player, star) {
+            console.log(`Star collected! star x: ${star.x}, y: ${star.y}.`);
+            //star.disableBody(true, true);
+            this.sound.play('collect');
+            this.socket.emit('starCollected', { starCollected: star });
+            star.destroy();
+        }
+
         this.socket.on('ufoPosition', function (ufo) {
             self.alien = self.physics.add.image(ufo.x, 75, "alien").setScale(0.4);
             self.alien.setCollideWorldBounds(true);
