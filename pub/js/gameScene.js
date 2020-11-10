@@ -94,7 +94,7 @@ class GameScene extends Phaser.Scene {
     }
     create() {
         // define any objects
-        console.log("I'm ready..I'm ready!");
+        console.log("Let's do this..!");
 
         // constants
         const width = this.scale.width;
@@ -105,6 +105,7 @@ class GameScene extends Phaser.Scene {
         this.socket = io();
         this.otherPlayers = this.physics.add.group();
         this.stars = this.physics.add.group();
+        var star;
 
 	    // add parallax bg
 		this.add.image(width * 0.5, height * 0.5, 'sky').setScrollFactor(0);
@@ -124,8 +125,8 @@ class GameScene extends Phaser.Scene {
         // add score text & game text to screen
         this.highScoreText = this.add.bitmapText(25, 15, 'soupofjustice', '', 24).setScrollFactor(0);
         this.scoreText = this.add.bitmapText(25, 45, 'soupofjustice', '', 24).setScrollFactor(0);
-        //this.livesText = this.add.bitmapText(10, 75, 'soupofjustice', 'Lives: ' + this.lives, 24).setScrollFactor(0);
 
+        // SCORE ============================================================================================================
         this.socket.on('scoreUpdate', function (players) {
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
@@ -143,47 +144,7 @@ class GameScene extends Phaser.Scene {
             }
         });
 
-        this.socket.on('starLocation', function (starLocation) {
-            if (self.star) self.star.destroy();
-            self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
-            console.log(`star.x: ${self.star.x}, star.y: ${self.star.y}.`)
-            self.physics.add.overlap(self.player, self.star, function () {
-                self.physics.pause();
-                this.sound.play('collect');
-                this.socket.emit('starCollected');
-            }, null, self);
-        });
-
-        this.socket.on('starGroup', function (stars) {
-            Object.keys(stars).forEach(function (id) {
-                self.stars.create(stars[id].x, stars[id].y, 'star');
-                console.log(`Star added! x: ${stars[id].x}, y: ${stars[id].y}.`);
-            });
-            console.log(`Star count: ${self.stars.countActive(true)}`);
-            self.physics.add.overlap(self.player, self.stars, collectStar, null, self);
-        });
-
-        function collectStar (player, star) {
-            console.log(`Star collected! star x: ${star.x}, y: ${star.y}.`);
-            //star.disableBody(true, true);
-            this.sound.play('collect');
-            this.socket.emit('starCollected', { starCollected: star });
-            star.destroy();
-        }
-
-        this.socket.on('ufoPosition', function (ufo) {
-            self.alien = self.physics.add.image(ufo.x, 75, "alien").setScale(0.4);
-            self.alien.setCollideWorldBounds(true);
-            self.alien.setBounce(1);
-            self.alien.setVelocityX(ufo.vel);
-            self.physics.add.overlap(self.player, self.alien, function () {
-                //this.sound.play('captured');
-                var player = self.player;
-                self.physics.pause();
-                this.socket.emit('playerAbducted', { player });
-            }, null, self);            
-        });
-
+        // PLAYERS ==========================================================================================================
         this.socket.on('playerRespawn', function (player) {
             console.log(`Player respawned: ${player.name}.`)
             self.player.x = player.x;
@@ -220,19 +181,6 @@ class GameScene extends Phaser.Scene {
             });
         });
 
-        this.socket.on('ufoMoved', function (ufoInfo) {
-            console.log("ufoMoved triggered");
-            self.alien.body.x = ufoInfo.x;
-            //self.alien.setVelocityX(ufoInfo.vel);
-            self.alien.body.velocity.x = ufoInfo.vel;
-        });
-
-        // camera
-        this.cameras.main.setBounds(0, 0, this.game.config.width * 2, this.game.config.height);
-        this.physics.world.setBounds(0, 0, 1920 * 2, this.game.config.height);
-
-        this.cursors = this.input.keyboard.createCursorKeys();
-
         function addPlayer(self, playerInfo) {
             self.player = self.physics.add.image(playerInfo.x, playerInfo.y, getImage("player", playerInfo.rnd)).setScale(0.3);
             self.player.setCollideWorldBounds(true);
@@ -260,36 +208,72 @@ class GameScene extends Phaser.Scene {
             self.otherPlayers.add(otherPlayer);
           }
 
-        function addStars(self, stars) {
-            for (var s in stars) {
-                var star = this.physics.add.image(s.x, s.y, 'star');
-                this.stars.add(star);
-            }
-        }
-        
-    //    function newStars ()
-    //    {
-    //        this.stars = this.add.group();
+        // STARS ============================================================================================================
+        this.socket.on('starGroup', function (stars) {
+            Object.keys(stars).forEach(function (id) {
+                star = self.physics.add.image(stars[id].x, stars[id].y, 'star');
+                star.setName(stars[id].id);
+                console.log(`star id: ${star.name}`);
+                self.stars.add(star);
+                console.log(`Star ${star.name} added! x: ${star.x}, y: ${star.y}.`);
+            });
+            console.log(`Star count: ${self.stars.countActive(true)}`);
+            self.physics.add.overlap(self.player, self.stars, collectStar, null, self);
+        });
 
-    //        for (var i = 0; i < 20; i++) {
-    //            var dropPos = Math.floor(Math.random() * this.game.config.width);
-    //            this.star = this.physics.add.image(dropPos, 0, 'star');
-    //            this.star.setCollideWorldBounds(true);
-    //            this.starGroup.add(this.star);
-    //        }
-    //    }
+        // collect stars
+        function collectStar (player, star) {
+            console.log(`Star ${star.name} collected! x: ${star.x}, y: ${star.y}.`);
+            this.sound.play('collect');
+            this.socket.emit('starCollected', { id: star.name, x: star.x, y: star.y });
+            star.destroy();
+        }
+
+        // destroy collected star
+        this.socket.on('destroyStar', function (id) {
+            console.log(`Star to destroy: ${id}.`);
+            self.stars.children.each(function (star) {
+                if (star.name == id){
+                    console.log(`Destroying star ${star.name}...`);
+                    star.destroy();
+                }
+            });
+            console.log(`Current star count: ${self.stars.countActive(true)}.`);
+        });
+
+
+        // UFO ==============================================================================================================
+        this.socket.on('ufoPosition', function (ufo) {
+            if (!self.alien){
+                self.alien = self.physics.add.image(ufo.x, ufo.y, "alien").setScale(0.4);
+                self.alien.body.velocity.x = ufo.vel;
+                self.alien.setCollideWorldBounds(true);
+                self.alien.setBounce(1);
+            } else {
+                self.alien.body.x = ufo.x;
+                self.alien.body.velocity.x = ufo.vel;
+            }
+            self.physics.add.overlap(self.player, self.alien, function () {
+                //this.sound.play('captured');
+                var player = self.player;
+                self.physics.pause();
+                this.socket.emit('playerAbducted', { player });
+            }, null, self);            
+        });
+        this.socket.on('ufoMoved', function (ufoInfo) {
+            self.alien.body.x = ufoInfo.x;
+            self.alien.body.velocity.x = ufoInfo.vel;
+        });
+
+        // camera
+        this.cameras.main.setBounds(0, 0, this.game.config.width * 2, this.game.config.height);
+        this.physics.world.setBounds(0, 0, 1920 * 2, this.game.config.height);
+
+        this.cursors = this.input.keyboard.createCursorKeys();
 
     }
     update() {
         //constantly running loop
-        
-    //    if (Phaser.Geom.Intersects.RectangleToRectangle(this.player.getBounds(), this.alien.getBounds())) {
-    //        this.lives --;
-    //        this.livesText.setText("Lives: " + this.lives);
-    //        this.scoreText.setText('Score: ' + this.score);
-    //        this.physics.pause();
-    //        this.end();
-    //    }
 
         if (this.player) {
 
