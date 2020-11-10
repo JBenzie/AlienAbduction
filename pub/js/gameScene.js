@@ -213,9 +213,9 @@ class GameScene extends Phaser.Scene {
             Object.keys(stars).forEach(function (id) {
                 star = self.physics.add.image(stars[id].x, stars[id].y, 'star');
                 star.setName(stars[id].id);
-                console.log(`star id: ${star.name}`);
+                //console.log(`star id: ${star.name}`);
                 self.stars.add(star);
-                console.log(`Star ${star.name} added! x: ${star.x}, y: ${star.y}.`);
+                //console.log(`Star ${star.name} added! x: ${star.x}, y: ${star.y}.`);
             });
             console.log(`Star count: ${self.stars.countActive(true)}`);
             self.physics.add.overlap(self.player, self.stars, collectStar, null, self);
@@ -223,7 +223,7 @@ class GameScene extends Phaser.Scene {
 
         // collect stars
         function collectStar (player, star) {
-            console.log(`Star ${star.name} collected! x: ${star.x}, y: ${star.y}.`);
+            //console.log(`Star ${star.name} collected! x: ${star.x}, y: ${star.y}.`);
             this.sound.play('collect');
             this.socket.emit('starCollected', { id: star.name, x: star.x, y: star.y });
             star.destroy();
@@ -231,7 +231,7 @@ class GameScene extends Phaser.Scene {
 
         // destroy collected star
         this.socket.on('destroyStar', function (id) {
-            console.log(`Star to destroy: ${id}.`);
+            //console.log(`Star to destroy: ${id}.`);
             self.stars.children.each(function (star) {
                 if (star.name == id){
                     console.log(`Destroying star ${star.name}...`);
