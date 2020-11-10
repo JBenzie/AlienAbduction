@@ -217,7 +217,7 @@ class GameScene extends Phaser.Scene {
                 self.stars.add(star);
                 //console.log(`Star ${star.name} added! x: ${star.x}, y: ${star.y}.`);
             });
-            console.log(`Star count: ${self.stars.countActive(true)}`);
+            console.log(`Total stars: ${self.stars.countActive(true)}`);
             self.physics.add.overlap(self.player, self.stars, collectStar, null, self);
         });
 
@@ -238,7 +238,18 @@ class GameScene extends Phaser.Scene {
                     star.destroy();
                 }
             });
-            console.log(`Current star count: ${self.stars.countActive(true)}.`);
+            console.log(`Stars remaining: ${self.stars.countActive(true)}.`);
+        });
+
+        // add reclaimed stars
+        this.socket.on('addStars', function (stars) {
+            console.log(`Adding ${stars.length} reclaimed stars.`);
+            Object.keys(stars).forEach(function (id) {
+                star = self.physics.add.image(stars[id].x, stars[id].y, 'star');
+                star.setName(stars[id].id);
+                self.stars.add(star);
+            });
+            console.log(`Updated star count: ${self.stars.countActive(true)}`);
         });
 
 

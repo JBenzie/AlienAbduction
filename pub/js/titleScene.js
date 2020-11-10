@@ -55,7 +55,7 @@ class TitleScene extends Phaser.Scene {
 
 		this.load.bitmapFont('soupofjustice', 'pub/assets/fonts/soupofjustice.png', 'pub/assets/fonts/soupofjustice.fnt');
 
-		this.load.audio('theme', 'pub/assets/audio/bensound-creepy.mp3');
+		this.load.audio('theme', 'pub/assets/audio/Good-Morning-Doctor-Weird.mp3');
 		this.load.audio('click', 'pub/assets/audio/zapThreeToneUp.mp3');
 		
 	}
@@ -63,7 +63,8 @@ class TitleScene extends Phaser.Scene {
 	create() {
 		
 		// background music
-        var music = this.sound.add('theme', { volume: 0.2 });
+		var music = this.sound.add('theme', { volume: 0.25 });
+		music.loop = true;
         music.play();
 
 	    const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;

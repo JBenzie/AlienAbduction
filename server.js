@@ -21,6 +21,7 @@ var ufo = {
 };
 
 var stars = [];
+var reclaimedStars = [];
 var star = {
   id: null,
   x: 0,
@@ -137,7 +138,8 @@ io.on('connection', function (socket) {
     playerId: socket.id,
     score: 0,
     rnd: _rnd,
-    name: avatar
+    name: avatar,
+    starsCollected: []
   };
 
   // send the players object to the new player
@@ -158,8 +160,11 @@ io.on('connection', function (socket) {
   socket.on('playerAbducted', function () {
     console.log(`${players[socket.id].name} has been abducted!`);
     players[socket.id].score = 0;
+    addStars(players[socket.id].starsCollected);
+    players[socket.id].starsCollected = [];
     players[socket.id].x = Math.floor(Math.random() * 3600) + 50;
     players[socket.id].y = Math.floor(Math.random() * 800) + 50;
+    io.emit('addStars', reclaimedStars);
     socket.emit('scoreUpdate', players);
     socket.emit('playerRespawn', players[socket.id]);
     socket.broadcast.emit('playerMoved', players[socket.id]);
@@ -168,6 +173,8 @@ io.on('connection', function (socket) {
   // player disconnect
   socket.on('disconnect', function () {
     console.log('Bummer..a user has disconnected..');
+    addStars(players[socket.id].starsCollected);
+    socket.broadcast.emit('addStars', reclaimedStars);
     // remove this player from our players object
     delete players[socket.id];
     // emit a message to all players to remove this player
@@ -184,8 +191,10 @@ io.on('connection', function (socket) {
 
   // listen for 'starCollected' event, update scores, generate new star
   socket.on('starCollected', function (starData) {
-    console.log(`Star ${starData.id} collected. x: ${starData.x}, y: ${starData.y}.`);
+    //console.log(`Star ${starData.id} collected. x: ${starData.x}, y: ${starData.y}.`);
     players[socket.id].score += 1;
+    star = { id: starData.id, x: starData.x, y: starData.y };
+    players[socket.id].starsCollected.push(star);
     if (players[socket.id].score > leaderboard.highScore) {
       leaderboard.highScore = players[socket.id].score;
       leaderboard.playerID = players[socket.id];
@@ -195,11 +204,10 @@ io.on('connection', function (socket) {
       return s.id;
     }).indexOf(starData.id);
 
-    console.log(`index: ${index}.`);
+    //console.log(`index: ${index}.`);
     if (index > -1) {
       stars.splice(index, 1);
     }
-    console.log(`Stars remaining: ${stars.length}.`);
     io.emit('destroyStar', starData.id);
     io.emit('leaderboardUpdate', leaderboard);
     socket.emit('scoreUpdate', players);
@@ -284,4 +292,15 @@ function initStars() {
     counter++;
   } while (counter < 500);
   console.log(`Initialized ${stars.length} stars...`);
+}
+
+// add stars
+function addStars(_stars) {
+  console.log(`Adding ${_stars.length} stars...`);
+  reclaimedStars = [];
+  var _star;
+  _stars.forEach(function(s) {
+    _star = { id: s.id, x: Math.floor(Math.random() * 3600) + 50, y: Math.floor(Math.random() * 800) + 50 };
+    reclaimedStars.push(_star);
+  });
 }
