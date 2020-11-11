@@ -156,8 +156,8 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('playerMoved', players[socket.id]);
   });
 
-  // listen for 'playerAbducted' event
-  socket.on('playerAbducted', function () {
+  // listen for 'gameOver' event
+  socket.on('gameOver', function () {
     console.log(`${players[socket.id].name} has been abducted!`);
     players[socket.id].score = 0;
     addStars(players[socket.id].starsCollected);

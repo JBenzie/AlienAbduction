@@ -2,11 +2,10 @@ class GameScene extends Phaser.Scene {
     constructor() {
         super('gameScene');
     }
-
     
     init() {
         // initialize game variables
-        
+        this.gameOver = false;
     }
 
     preload() {
@@ -99,6 +98,8 @@ class GameScene extends Phaser.Scene {
         // constants
         const width = this.scale.width;
         const height = this.scale.height;
+        const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
+        const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
         
         // initialize socket.io
         var self = this;
@@ -126,6 +127,20 @@ class GameScene extends Phaser.Scene {
         this.highScoreText = this.add.bitmapText(25, 15, 'soupofjustice', '', 24).setScrollFactor(0);
         this.scoreText = this.add.bitmapText(25, 45, 'soupofjustice', '', 24).setScrollFactor(0);
 
+        // GAME =============================================================================================================
+
+        function gameOver(player) {
+            self.gameOverText = self.add.bitmapText(player.x, 150, 'soupofjustice', 'GAME OVER', 72).setOrigin(0.5);
+            self.altText = self.add.bitmapText(player.x, 250, 'soupofjustice', 'Oh, no... they probed you!', 56).setOrigin(0.5);
+            self.altText2 = self.add.bitmapText(player.x, 350, 'soupofjustice', 'Click to play again', 56).setOrigin(0.5).setInteractive({ useHandCursor: true  });
+            self.gameOverText.visible = true;
+            self.altText.visible = true;
+            self.altText2.visible = true;
+            self.input.once('pointerdown', () => {
+                self.socket.emit('gameOver', { player });
+            }); 
+        }
+
         // SCORE ============================================================================================================
         this.socket.on('scoreUpdate', function (players) {
             Object.keys(players).forEach(function (id) {
@@ -149,6 +164,9 @@ class GameScene extends Phaser.Scene {
             console.log(`Player respawned: ${player.name}.`)
             self.player.x = player.x;
             self.player.y = player.y;
+            self.gameOverText.visible = false;
+            self.altText.visible = false;
+            self.altText2.visible = false;
             self.physics.resume();
         });
 
@@ -268,7 +286,7 @@ class GameScene extends Phaser.Scene {
                 //this.sound.play('captured');
                 var player = self.player;
                 self.physics.pause();
-                this.socket.emit('playerAbducted', { player });
+                gameOver(player);               
             }, null, self);            
         });
         this.socket.on('ufoMoved', function (ufoInfo) {
